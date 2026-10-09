@@ -1,0 +1,292 @@
+cell_number,cell_type,source,outputs
+1,code,"# This Python 3 environment comes with many helpful analytics libraries installed
+# It is defined by the kaggle/python Docker image: https://github.com/kaggle/docker-python
+# For example, here's several helpful packages to load
+
+import numpy as np # linear algebra
+import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+
+# Input data files are available in the read-only ""../input/"" directory
+# For example, running this (by clicking run or pressing Shift+Enter) will list all files under the input directory
+
+import os
+for dirname, _, filenames in os.walk('/kaggle/input'):
+    for filename in filenames:
+        print(os.path.join(dirname, filename))
+
+# You can write up to 20GB to the current directory (/kaggle/working/) that gets preserved as output when you create a version using ""Save & Run All"" 
+# You can also write temporary files to /kaggle/temp/, but they won't be saved outside of the current session","/kaggle/input/anime-recommendations-database/rating.csv
+/kaggle/input/anime-recommendations-database/anime.csv
+/kaggle/input/qwen-3/transformers/0.6b-base/1/config.json
+/kaggle/input/qwen-3/transformers/0.6b-base/1/merges.txt
+/kaggle/input/qwen-3/transformers/0.6b-base/1/README.md
+/kaggle/input/qwen-3/transformers/0.6b-base/1/tokenizer.json
+/kaggle/input/qwen-3/transformers/0.6b-base/1/vocab.json
+/kaggle/input/qwen-3/transformers/0.6b-base/1/tokenizer_config.json
+/kaggle/input/qwen-3/transformers/0.6b-base/1/model.safetensors
+/kaggle/input/qwen-3/transformers/0.6b-base/1/generation_config.json"
+2,markdown,# **📖 Anime Adventure Blog: How We Built a Smart Recommendation Bot**,no_output
+3,markdown,"## **🧠 Model - Qwen3**
+Qwen3 is a large language model (LLM) developed by Alibaba Cloud, part of the Qwen series — one of the most powerful open-source LLMs available today. It's trained on massive amounts of text data from the web, books, code, and more.
+
+## 🔍 Key Features of Qwen3:
+| Feature                     | Description                                                                     |
+|-----------------------------|---------------------------------------------------------------------------------|
+| Multilingual Support        | Understands and generates text in multiple languages including English, Chinese, Japanese, Korean, etc. |
+| Code Writing & Explanation  | Write scripts, debug, or explain programming logic.                             |
+| Dialogue Understanding      | Built to understand and generate conversationally natural responses.            |
+| Creative Writing            | Generate stories, poems, screenplays, and fictional worlds.                     |
+| Reasoning & Logic           | Solve puzzles, math problems, and logical questions.                             |
+| Fine-tuned for Tasks        | Some versions are fine-tuned for specific domains like storytelling, coding, and chatbots. |",no_output
+4,markdown,"## **📌 Task Outline: What This Notebook Does**
+
+The notebook you're building leverages Qwen3’s capabilities in combination with a real anime recommendation dataset, allowing users to:
+
+- Understand Anime Trends
+- Generate Personalized Anime Recommendations
+- Combine Data Filtering with AI Creativity
+- Anime Recommendation depends on out mood using Qwen Thinking mode.",no_output
+5,markdown,## 🔧 Setup & Dependencies,no_output
+6,code,"# Import libraries
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from transformers import AutoTokenizer, AutoModelForCausalLM
+import torch",no_output
+7,markdown,## 🔑 Load Qwen3 Model and Tokenizer,no_output
+8,code,"# Load Qwen 0.6B model 
+model_path = ""/kaggle/input/qwen-3/transformers/0.6b-base/1""
+tokenizer = AutoTokenizer.from_pretrained(model_path)
+model = AutoModelForCausalLM.from_pretrained(model_path).to(""cuda"" if torch.cuda.is_available() else ""cpu"")
+
+# Load dataset
+df = pd.read_csv(""/kaggle/input/anime-recommendations-database/anime.csv"")
+print(df.head(5))","2025-04-30 11:28:18.185540: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:477] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1746012498.361721      19 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1746012498.414538      19 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+
+   anime_id                              name  \
+0     32281                    Kimi no Na wa.   
+1      5114  Fullmetal Alchemist: Brotherhood   
+2     28977                          Gintama°   
+3      9253                       Steins;Gate   
+4      9969                     Gintama&#039;   
+
+                                               genre   type episodes  rating  \
+0               Drama, Romance, School, Supernatural  Movie        1    9.37   
+1  Action, Adventure, Drama, Fantasy, Magic, Mili...     TV       64    9.26   
+2  Action, Comedy, Historical, Parody, Samurai, S...     TV       51    9.25   
+3                                   Sci-Fi, Thriller     TV       24    9.17   
+4  Action, Comedy, Historical, Parody, Samurai, S...     TV       51    9.16   
+
+   members  
+0   200630  
+1   793665  
+2   114262  
+3   673572  
+4   151266"
+9,markdown,## 📊 Explore the Anime Dataset,no_output
+10,code,"#Filter and visualize the dataset
+print(""Top 5 Highest-Rated Animes:"")
+display(df.sort_values(""rating"", ascending=False).head()[[""name"", ""genre"", ""type"", ""rating""]])
+
+plt.figure(figsize=(10, 6))
+sns.countplot(y=""type"", data=df, order=df[""type""].value_counts().index[:5])
+plt.title(""Top 5 Anime Types (Movie/Series/etc.)"")
+plt.show()
+
+plt.figure(figsize=(10, 6))
+sns.histplot(df[""rating""], bins=20, kde=True)
+plt.title(""Distribution of Anime Ratings"")
+plt.xlabel(""Rating (Out of 10)"")
+plt.ylabel(""Count"")
+plt.show()","Top 5 Highest-Rated Animes:
+
+                                          name  \
+10464  Taka no Tsume 8: Yoshida-kun no X-Files   
+10400              Spoon-hime no Swing Kitchen   
+9595                          Mogura no Motoro   
+0                               Kimi no Na wa.   
+9078                              Kahei no Umi   
+
+                                      genre   type  rating  
+10464                        Comedy, Parody  Movie   10.00  
+10400                       Adventure, Kids     TV    9.60  
+9595                          Slice of Life  Movie    9.50  
+0      Drama, Romance, School, Supernatural  Movie    9.37  
+9078                             Historical  Movie    9.33  
+<Figure size 1000x600 with 1 Axes>
+/usr/local/lib/python3.11/dist-packages/seaborn/_oldcore.py:1119: FutureWarning: use_inf_as_na option is deprecated and will be removed in a future version. Convert inf values to NaN before operating instead.
+  with pd.option_context('mode.use_inf_as_na', True):
+
+<Figure size 1000x600 with 1 Axes>"
+11,markdown,"## 🤖 Anime Recommendation Bot
+### Helper Function for Model Inference
+Using Qwen 0.6B to generate personalized anime suggestions",no_output
+12,code,"def qwen_generate(prompt):
+    inputs = tokenizer(prompt, return_tensors=""pt"").to(model.device)
+    outputs = model.generate(
+        **inputs,
+        max_new_tokens=200,
+        num_return_sequences=1,
+        pad_token_id=tokenizer.eos_token_id , 
+        temperature=0.7,
+        do_sample=True
+    )
+    return tokenizer.decode(outputs[0], skip_special_tokens=True)",no_output
+13,markdown,"## Use Qwen 0.6B to generate personalized anime suggestions
+
+## 1: Genre-Based Recommendations",no_output
+14,code,"prompt = """"""Suggest 3 action anime for someone who loves complex villains.  
+Explain why each matches the request. Use emojis.""""""
+response = qwen_generate(prompt)
+print(response)","Suggest 3 action anime for someone who loves complex villains.  
+Explain why each matches the request. Use emojis. I would recommend watching the anime series ""Serenity"" and ""Ranma 1/2"" which both feature complex, multi-dimensional villains. 
+
+1. **Serenity**: This series centers around a young girl named Yui who is sent to a boarding school to escape the world. Despite her best efforts to fit in, she develops strong relationships and becomes a threat to those around her. Her complex motivations, including her desire to be with her crush and her own emotional struggles, give her a compelling villainous arc. 👌
+
+2. **Ranma 1/2**: This second-season installment of the Ranma series follows the titular character as he embarks on a new journey after surviving a series of violent events. His complex personality, including his struggles with his mother and his own desires for love and belonging, makes him a dynamic and memorable villain. 🌸
+
+Both series offer depth and nuance to their villains, making them perfect choices for someone who"
+15,markdown,## 2. Underrated Gems,no_output
+16,code,"prompt = ""List 3 underrated anime with unique art styles. Include genres and summaries.""
+print(qwen_generate(prompt))","List 3 underrated anime with unique art styles. Include genres and summaries. Sure! Here are three underrated anime series with unique art styles:
+
+1. **""Coco"" (2000-2012)** - Directed by Takashi Miike, this anime is known for its surreal and experimental style, blending elements of fantasy, comedy, and horror. The series follows a young boy named Julio who accidentally becomes the guardian of a mythical city, ""Coco,"" where he must navigate dangerous landscapes and confront his inner demons. The art style is characterized by vibrant colors, distorted shapes, and a blend of traditional Japanese art techniques with modern animation.
+
+2. **""One Piece"" (2003-2009)** - While often praised for its high production values and epic storytelling, ""One Piece"" has also been noted for its unique art style. The series features sweeping landscapes, intricate panel layouts, and a variety of color palettes that enhance the dramatic action. The art style is often described as being inspired by European landscapes and medieval"
+17,markdown,## 3. Analyze Trends with Qwen,no_output
+18,code,"prompt = """"""The dataset shows 40% of top-rated animes are action-themed.  
+Explain why action anime dominates global popularity. List 3 cultural/historical reasons.""""""
+analysis = qwen_generate(prompt)
+print(analysis)","The dataset shows 40% of top-rated animes are action-themed.  
+Explain why action anime dominates global popularity. List 3 cultural/historical reasons. Explain 3 reasons why these specific factors led to the popularity of action anime.
+Answer:
+In this problem, we have to explain the popularity of action anime for the following reasons: action anime dominates the global popularity; the cultural and historical factors. **Action anime** is a type of anime where the main focus is on action and fighting. Many action anime have an **action-oriented plot** that is **action-oriented**. In this way, this type of anime appeals to the audience. The audience likes action anime because it is **a popular genre of anime**. **Action anime** is a popular genre of anime due to its **focusing on action and fighting**. In this way, the audience can enjoy action anime. **The popularity of action anime is mainly due to the fact that it has a plot that is focused on action and fighting.** This type of plot is popular among the audience because it is **a popular genre of anime**. As a result, the audience enjoys"
+19,markdown,"#### *From initial Qwen3 interactions based on general knowledge, now we will using the dataset with qwen3 mode. This shift demonstrably enhanced the LLM's ability to provide targeted and insightful anime recommendations, highlighting the strength of data-augmented LLM applications.*
+## **🤖 LLM + Dataset Interaction**
+### 1. Filter Recommendations Using Data - Combine dataset filters with AI creativity!",no_output
+20,code,"# **Convert the 'episodes' column to numeric if it's not already**
+if df['episodes'].dtype == 'object':
+    df['episodes'] = pd.to_numeric(df['episodes'], errors='coerce')
+    # Remove rows where conversion failed (NaN values in 'episodes')
+    df.dropna(subset=['episodes'], inplace=True)
+
+# Filter dataset for short series (<=12 episodes)
+short_series = df[(df[""episodes""] <= 12) & (df[""episodes""] > 1)].sort_values(""rating"", ascending=False)
+
+#Prompting with dataset results
+prompt = f""""""Based on this list of short anime:\n{short_series.head(5)[['name', 'genre', 'rating']]}\n\n
+Suggest 2 binge-worthy short series and explain why they're worth watching.""""""
+print(qwen_generate(prompt))","Based on this list of short anime:
+                                                    name  \
+5      Haikyuu!!: Karasuno Koukou VS Shiratorizawa Ga...   
+17                         Mushishi Zoku Shou 2nd Season   
+21     Rurouni Kenshin: Meiji Kenkaku Romantan - Tsui...   
+23                                         One Punch Man   
+10102                                  Ryouma 30 Seconds   
+
+                                                   genre  rating  
+5                 Comedy, Drama, School, Shounen, Sports    9.15  
+17     Adventure, Fantasy, Historical, Mystery, Seine...    8.88  
+21     Action, Drama, Historical, Martial Arts, Roman...    8.83  
+23     Action, Comedy, Parody, Sci-Fi, Seinen, Super ...    8.82  
+10102                                         Historical    8.80  
+
+
+Suggest 2 binge-worthy short series and explain why they're worth watching. 1. **Haikyuu!!: Karasuno Koukou VS Shiratorizawa Ga...**  
+   - **Why it's worth watching**: This is a fast-paced, action-packed anime that combines comedy and drama, making it a great mix for binge-watching. The intense battles and memorable characters will keep you on the edge of your seat, while the humor and witty dialogue add a lighthearted element.
+
+2. **One Punch Man**  
+   - **Why it's worth watching**: One Punch Man is a unique blend of action, comedy, and humor, with a focus on social commentary and satire. The fast-paced storytelling and relatable characters make it a fun and engaging choice for binge-watching. It’s also a great example of how a single anime can be a staple in any collection."
+21,markdown,"## 2. Recommend Based on Mood + Dataset
+#### Here, we leverage Qwen3's reasoning capabilities, evident in its self-generated ""thinking"" process, to understand user-stated moods. By grounding this inherent understanding with a curated list of anime titles, genres, and ratings from our dataset, we move beyond generic suggestions. This approach empowers Qwen3 to make more contextually relevant and data-backed recommendations, demonstrating the synergy between its intrinsic knowledge processing and the power of external information.",no_output
+22,code,"def recommend_anime_with_context_direct(mood, top_k=5):
+    # Build prompt context from dataset
+    context = ""\n"".join([
+        f""{row['name']} ({row['genre']}): Rating {row['rating']}""
+        for _, row in df.sort_values('rating', ascending=False).head(20).iterrows()
+    ])
+
+    prompt = f""""""
+<thinking>
+Okay, the user is feeling ""{mood}"". I need to recommend some anime that match this emotional state.
+First, I'll look at the genres typically associated with this mood — for example, melancholic moods might align with Drama or Tragedy.
+Next, I'll scan the provided list of anime and check their genres and description.
+I should prioritize ones with high scores and positive community feedback.
+Finally, I'll summarize each recommendation clearly, explaining why it fits the mood.
+</thinking>
+
+Based on the following anime list, recommend up to {top_k} titles that best fit someone feeling ""{mood}"".
+
+Anime List:
+{context}
+
+Recommendations:
+""""""
+    result = qwen_generate(prompt)
+    print(""Recommendations:"")
+    print(result.replace('\n', '\n  ')) # Adding indentation for better readability
+    return result
+
+# Call func
+#recommend_anime_with_context_direct(input(""Please Enter your mood, I will recommend top anime for you""))
+recommend_anime_with_context_direct('Action')","Recommendations:
+
+  <thinking>
+  Okay, the user is feeling ""Action"". I need to recommend some anime that match this emotional state.
+  First, I'll look at the genres typically associated with this mood — for example, melancholic moods might align with Drama or Tragedy.
+  Next, I'll scan the provided list of anime and check their genres and description.
+  I should prioritize ones with high scores and positive community feedback.
+  Finally, I'll summarize each recommendation clearly, explaining why it fits the mood.
+  </thinking>
+  
+  Based on the following anime list, recommend up to 5 titles that best fit someone feeling ""Action"".
+  
+  Anime List:
+  Taka no Tsume 8: Yoshida-kun no X-Files (Comedy, Parody): Rating 10.0
+  Mogura no Motoro (Slice of Life): Rating 9.5
+  Kimi no Na wa. (Drama, Romance, School, Supernatural): Rating 9.37
+  Kahei no Umi (Historical): Rating 9.33
+  Fullmetal Alchemist: Brotherhood (Action, Adventure, Drama, Fantasy, Magic, Military, Shounen): Rating 9.26
+  Yakusoku: Africa Mizu to Midori (Drama, Kids): Rating 9.25
+  Gintama° (Action, Comedy, Historical, Parody, Samurai, Sci-Fi, Shounen): Rating 9.25
+  Steins;Gate (Sci-Fi, Thriller): Rating 9.17
+  Gintama&#039; (Action, Comedy, Historical, Parody, Samurai, Sci-Fi, Shounen): Rating 9.16
+  Haikyuu!!: Karasuno Koukou VS Shiratorizawa Gakuen Koukou (Comedy, Drama, School, Shounen, Sports): Rating 9.15
+  Hunter x Hunter (2011) (Action, Adventure, Shounen, Super Power): Rating 9.13
+  Gintama&#039;: Enchousen (Action, Comedy, Historical, Parody, Samurai, Sci-Fi, Shounen): Rating 9.11
+  Ginga Eiyuu Densetsu (Drama, Military, Sci-Fi, Space): Rating 9.11
+  Gintama Movie: Kanketsu-hen - Yorozuya yo Eien Nare (Action, Comedy, Historical, Parody, Samurai, Sci-Fi, Shounen): Rating 9.1
+  Clannad: After Story (Drama, Fantasy, Romance, Slice of Life, Supernatural): Rating 9.06
+  Koe no Katachi (Drama, School, Shounen): Rating 9.05
+  Gintama (Action, Comedy, Historical, Parody, Samurai, Sci-Fi, Shounen): Rating 9.04
+  Santa-san wa Dai Isogashi (Fantasy, Kids): Rating 9.0
+  Shenmi Shijie Lixian Ji (Adventure, Comedy, Fantasy): Rating 9.0
+  Mienu Me ni Kanjita Kumotoriyama no Asahi (Drama, Kids): Rating 9.0
+  
+  Recommendations:
+  1. **Hunter x Hunter** - This is a classic anime that blends elements of action and adventure with strong storytelling and a high score, making it a great choice for someone feeling ""Action"".
+  2. **Gintama Movie: Kanketsu-hen - Yorozuya yo Eien Nare** - This is a thrilling sci-fi action film that combines elements of comedy, drama, and action, with a high score and positive reception.
+  3. **Clannad: After Story** - This drama-drama film is a mix of action, fantasy, and romance, with a high score and positive feedback, making it a great choice for someone feeling ""Action"".
+  4. **Gintama** - This anime is a classic blend of action, comedy, historical drama, and action, with a high score and positive reception.
+  5. **Clannad: After Story** - This drama-drama film is a mix of action, fantasy, and romance, with a
+
+'\n<thinking>\nOkay, the user is feeling ""Action"". I need to recommend some anime that match this emotional state.\nFirst, I\'ll look at the genres typically associated with this mood — for example, melancholic moods might align with Drama or Tragedy.\nNext, I\'ll scan the provided list of anime and check their genres and description.\nI should prioritize ones with high scores and positive community feedback.\nFinally, I\'ll summarize each recommendation clearly, explaining why it fits the mood.\n</thinking>\n\nBased on the following anime list, recommend up to 5 titles that best fit someone feeling ""Action"".\n\nAnime List:\nTaka no Tsume 8: Yoshida-kun no X-Files (Comedy, Parody): Rating 10.0\nMogura no Motoro (Slice of Life): Rating 9.5\nKimi no Na wa. (Drama, Romance, School, Supernatural): Rating 9.37\nKahei no Umi (Historical): Rating 9.33\nFullmetal Alchemist: Brotherhood (Action, Adventure, Drama, Fantasy, Magic, Military, Shounen): Rating 9.26\nYakusoku: Africa Mizu to Midori (Drama, Kids): Rating 9.25\nGintama° (Action, Comedy, Historical, Parody, Samurai, Sci-Fi, Shounen): Rating 9.25\nSteins;Gate (Sci-Fi, Thriller): Rating 9.17\nGintama&#039; (Action, Comedy, Historical, Parody, Samurai, Sci-Fi, Shounen): Rating 9.16\nHaikyuu!!: Karasuno Koukou VS Shiratorizawa Gakuen Koukou (Comedy, Drama, School, Shounen, Sports): Rating 9.15\nHunter x Hunter (2011) (Action, Adventure, Shounen, Super Power): Rating 9.13\nGintama&#039;: Enchousen (Action, Comedy, Historical, Parody, Samurai, Sci-Fi, Shounen): Rating 9.11\nGinga Eiyuu Densetsu (Drama, Military, Sci-Fi, Space): Rating 9.11\nGintama Movie: Kanketsu-hen - Yorozuya yo Eien Nare (Action, Comedy, Historical, Parody, Samurai, Sci-Fi, Shounen): Rating 9.1\nClannad: After Story (Drama, Fantasy, Romance, Slice of Life, Supernatural): Rating 9.06\nKoe no Katachi (Drama, School, Shounen): Rating 9.05\nGintama (Action, Comedy, Historical, Parody, Samurai, Sci-Fi, Shounen): Rating 9.04\nSanta-san wa Dai Isogashi (Fantasy, Kids): Rating 9.0\nShenmi Shijie Lixian Ji (Adventure, Comedy, Fantasy): Rating 9.0\nMienu Me ni Kanjita Kumotoriyama no Asahi (Drama, Kids): Rating 9.0\n\nRecommendations:\n1. **Hunter x Hunter** - This is a classic anime that blends elements of action and adventure with strong storytelling and a high score, making it a great choice for someone feeling ""Action"".\n2. **Gintama Movie: Kanketsu-hen - Yorozuya yo Eien Nare** - This is a thrilling sci-fi action film that combines elements of comedy, drama, and action, with a high score and positive reception.\n3. **Clannad: After Story** - This drama-drama film is a mix of action, fantasy, and romance, with a high score and positive feedback, making it a great choice for someone feeling ""Action"".\n4. **Gintama** - This anime is a classic blend of action, comedy, historical drama, and action, with a high score and positive reception.\n5. **Clannad: After Story** - This drama-drama film is a mix of action, fantasy, and romance, with a'"
+23,markdown,"### From Anime Chat to Data-Informed Insights
+Witness how structured anime data transforms Qwen3's understanding, moving beyond simple interaction to insightful analysis and targeted recommendations.",no_output
+24,markdown,"| **🎯 What You’re Missing If You Skip the Dataset?** | **With Dataset** | **Without Dataset** |
+|-----------------------------------------------|--------------|-----------------|
+| Filter by genre/rating/episode count          | ✅ Yes       | ❌ No           |
+| Show actual stats (e.g., ""Top 5 rated"")       | ✅ Yes       | ❌ Hardcoded or generic |
+| Build personalized filters                     | ✅ Yes       | ❌ Very limited   |
+| Add interactivity (e.g., UI)                 | ✅ Yes       | ❌ Harder to justify results |",no_output
+25,markdown,"### What actually done in this notebook
+- Qwen is the Storyteller & Recommender – creative, expressive, knows a lot.
+- Dataset is the Library – full of facts, lists, numbers, and structure.
+
+You wouldn’t ask a storyteller to guess what books are in a library — instead, show them the shelves and say:
+""From these books, which would you recommend to a fantasy fan?""
+That’s exactly what our notebook does!",no_output
